@@ -1,16 +1,18 @@
 package dev.johnoreilly.common.repository
 
-import app.cash.sqldelight.async.coroutines.awaitCreate
-import app.cash.sqldelight.coroutines.asFlow
-import app.cash.sqldelight.coroutines.mapToList
+import androidx.sqlite.SQLiteConnection
 import co.touchlab.kermit.Logger
+import com.kqlite.statement.insert
+import com.kqlite.statement.quickDelete
+import com.kqlite.statement.quickSelect
+import com.kqlite.table.Action
+import dev.johnoreilly.common.db.TblPeople
 import dev.johnoreilly.common.di.PeopleInSpaceDatabaseWrapper
 import dev.johnoreilly.common.remote.Assignment
 import dev.johnoreilly.common.remote.AstroviewerApi
 import dev.johnoreilly.common.remote.IssPosition
 import dev.johnoreilly.common.remote.OrbitPoint
 import dev.johnoreilly.common.remote.PeopleInSpaceApi
-import dev.johnoreilly.peopleinspace.db.PeopleInSpaceDatabase
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import org.koin.core.annotation.Single
@@ -31,30 +33,33 @@ class PeopleInSpaceRepository(
 ) : PeopleInSpaceRepositoryInterface {
 
     val coroutineScope: CoroutineScope = MainScope()
-    private val peopleInSpaceQueries = peopleInSpaceDatabase.instance.peopleInSpaceQueries
-
+    private var connection: SQLiteConnection? = null
+    private val peopleFlow = MutableStateFlow<List<Assignment>>(emptyList())
     val logger = Logger.withTag("PeopleInSpaceRepository")
 
     init {
         coroutineScope.launch {
-            // TODO figure out cleaner place to invoke this (needed for web implementatin)
-            PeopleInSpaceDatabase.Schema.awaitCreate(peopleInSpaceDatabase.driver)
             fetchAndStorePeople()
         }
     }
 
-    override fun fetchPeopleAsFlow(): Flow<List<Assignment>> {
-        return peopleInSpaceQueries.selectAll(
-            mapper = { name, craft, personImageUrl, personBio, nationality ->
-                Assignment(
-                    name = name,
-                    craft = craft,
-                    personImageUrl = personImageUrl,
-                    personBio = personBio,
-                    nationality = nationality
-                )
-            }
-        ).asFlow().mapToList(Dispatchers.Default)
+    override fun fetchPeopleAsFlow(): Flow<List<Assignment>> = peopleFlow.asStateFlow()
+
+    private fun loadPeople(): List<Assignment> {
+        connection = connection ?: peopleInSpaceDatabase.instance.open()
+
+        return TblPeople.quickSelect().use { cursor ->
+            cursor
+                .asSequence()
+                .map(TblPeople::mapToAssignment)
+                .toList()
+        }
+    }
+
+    fun refreshPeople() {
+        val people = loadPeople()
+        logger.d { "Found ${people.size} people." }
+        peopleFlow.value = people
     }
 
     override suspend fun fetchAndStorePeople() {
@@ -62,19 +67,23 @@ class PeopleInSpaceRepository(
         try {
             val result = peopleInSpaceApi.fetchPeople()
 
+            connection = connection ?: peopleInSpaceDatabase.instance.open()
             // this is very basic implementation for now that removes all existing rows
             // in db and then inserts results from api request
-            peopleInSpaceQueries.transaction {
-                peopleInSpaceQueries.deleteAll()
-                result.people.forEach {
-                    peopleInSpaceQueries.insertItem(
-                        it.name,
-                        it.craft,
-                        it.personImageUrl,
-                        it.personBio,
-                        it.nationality
-                    )
+            peopleInSpaceDatabase.instance.withTransaction {
+
+                // DELETE FROM People;
+                TblPeople.quickDelete(where = null)
+
+                // INSERT OR REPLACE INTO People VALUES(?,?,?,?,?);
+                val prepared = TblPeople.insert(onConflict = Action.REPLACE)
+                result.people.forEach { assignment ->
+                    prepared.bind {
+                        TblPeople.bindAssignment(bind = this, assignment = assignment)
+                    }.execute()
                 }
+                prepared.close()
+                refreshPeople()
             }
         } catch (e: CancellationException) {
             throw e

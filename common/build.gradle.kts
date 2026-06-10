@@ -1,14 +1,7 @@
-@file:OptIn(ExperimentalWasmDsl::class)
-
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
-import com.google.devtools.ksp.gradle.KspAATask
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
-
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.kotlinx.serialization)
-    alias(libs.plugins.sqlDelight)
     alias(libs.plugins.ksp)
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.compose.compiler)
@@ -36,13 +29,14 @@ kotlin {
     }
     jvm()
 
-    wasmJs {
-        browser {
-            commonWebpackConfig {
-                outputFileName = "peopleinspaceShared.js"
-            }
-        }
-    }
+    // WEB is not supported by KQLite
+//    wasmJs {
+//        browser {
+//            commonWebpackConfig {
+//                outputFileName = "peopleinspaceShared.js"
+//            }
+//        }
+//    }
 
     sourceSets {
         commonMain.dependencies {
@@ -50,8 +44,9 @@ kotlin {
             implementation(libs.kotlinx.coroutines)
             api(libs.kotlinx.serialization)
 
-            implementation(libs.sqldelight.runtime)
-            implementation(libs.sqldelight.coroutines.extensions)
+            implementation(libs.kqlite)
+            implementation(libs.androidx.sqlite)
+            implementation(libs.androidx.sqlite.bundled)
 
             api(libs.koin.core)
             implementation(libs.koin.compose.multiplatform)
@@ -79,7 +74,6 @@ kotlin {
 
         androidMain.dependencies {
             implementation(libs.ktor.client.android)
-            implementation(libs.sqldelight.android.driver)
 
             implementation(libs.osmdroidAndroid)
             implementation(libs.osm.android.compose)
@@ -87,7 +81,6 @@ kotlin {
 
         jvmMain.dependencies {
             implementation(libs.ktor.client.java)
-            implementation(libs.sqldelight.sqlite.driver)
             implementation(libs.slf4j)
             implementation(libs.kotlinx.coroutines.swing)
         }
@@ -98,15 +91,14 @@ kotlin {
 
         appleMain.dependencies {
             implementation(libs.ktor.client.darwin)
-            implementation(libs.sqldelight.native.driver)
         }
 
-        wasmJsMain.dependencies {
-            implementation(libs.sqldelight.web.driver)
-            implementation(npm("@cashapp/sqldelight-sqljs-worker", "2.1.0"))
-            implementation(npm("sql.js", libs.versions.sqlJs.get()))
-            implementation(devNpm("copy-webpack-plugin", libs.versions.webPackPlugin.get()))
-        }
+//        wasmJsMain.dependencies {
+//            implementation(libs.sqldelight.web.driver)
+//            implementation(npm("@cashapp/sqldelight-sqljs-worker", "2.1.0"))
+//            implementation(npm("sql.js", libs.versions.sqlJs.get()))
+//            implementation(devNpm("copy-webpack-plugin", libs.versions.webPackPlugin.get()))
+//        }
     }
 
     // KSP Common sourceSet
@@ -116,14 +108,6 @@ kotlin {
 
 }
 
-sqldelight {
-    databases {
-        create("PeopleInSpaceDatabase") {
-            generateAsync = true
-            packageName.set("dev.johnoreilly.peopleinspace.db")
-        }
-    }
-}
 
 multiplatformSwiftPackage {
     packageName("PeopleInSpaceKit")
@@ -151,7 +135,6 @@ dependencies {
     add("kspIosArm64", libs.koin.ksp.compiler)
     add("kspIosSimulatorArm64", libs.koin.ksp.compiler)
     add("kspJvm", libs.koin.ksp.compiler)
-    add("kspWasmJs", libs.koin.ksp.compiler)
 }
 
 // KSP Metadata Trigger

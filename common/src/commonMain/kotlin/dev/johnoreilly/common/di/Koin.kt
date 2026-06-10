@@ -1,7 +1,6 @@
 package dev.johnoreilly.common.di
 
-import app.cash.sqldelight.db.SqlDriver
-import dev.johnoreilly.peopleinspace.db.PeopleInSpaceDatabase
+import dev.johnoreilly.common.db.PeopleInSpaceDatabase
 import io.ktor.client.*
 import io.ktor.client.engine.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -50,7 +49,7 @@ class CommonModule {
     fun dispatcher() = CoroutineScope(Dispatchers.Default + SupervisorJob() )
 }
 
-class PeopleInSpaceDatabaseWrapper(val driver: SqlDriver, val instance: PeopleInSpaceDatabase)
+class PeopleInSpaceDatabaseWrapper(val instance: PeopleInSpaceDatabase)
 
 @Module
 expect class ViewModelModule()

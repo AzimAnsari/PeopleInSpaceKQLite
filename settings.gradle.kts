@@ -7,6 +7,9 @@ pluginManagement {
             maven {
                 url = uri("https://androidx.dev/snapshots/builds/14637376/artifacts/repository")
             }
+            maven {
+                url = uri("https://central.sonatype.com/repository/maven-snapshots/")
+            }
         }
     }
 
@@ -24,7 +27,7 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 include(":app")
 include(":wearApp")
 include(":compose-desktop")
-include(":compose-web")
+//include(":compose-web")
 include(":common")
 include(":backend")
 include(":mcp-server")

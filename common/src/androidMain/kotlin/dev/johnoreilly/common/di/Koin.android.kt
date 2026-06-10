@@ -1,11 +1,9 @@
 package dev.johnoreilly.common.di
 
 import android.content.Context
-import app.cash.sqldelight.async.coroutines.synchronous
-import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import dev.johnoreilly.common.viewmodel.ISSPositionViewModel
 import dev.johnoreilly.common.viewmodel.PersonListViewModel
-import dev.johnoreilly.peopleinspace.db.PeopleInSpaceDatabase
+import dev.johnoreilly.common.db.PeopleInSpaceDatabase
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.android.Android
 import org.koin.android.annotation.KoinViewModel
@@ -37,8 +35,8 @@ actual class NativeModule {
 
     @Single
     actual fun getPeopleInSpaceDatabaseWrapper(ctx : ContextWrapper): PeopleInSpaceDatabaseWrapper {
-        val driver = AndroidSqliteDriver(PeopleInSpaceDatabase.Schema.synchronous(), ctx.context, "peopleinspace.db")
-        return PeopleInSpaceDatabaseWrapper(driver, PeopleInSpaceDatabase(driver))
+        val file = ctx.context.getDatabasePath(PeopleInSpaceDatabase.NAME).absolutePath
+        return PeopleInSpaceDatabaseWrapper(PeopleInSpaceDatabase(file))
     }
 
 }
