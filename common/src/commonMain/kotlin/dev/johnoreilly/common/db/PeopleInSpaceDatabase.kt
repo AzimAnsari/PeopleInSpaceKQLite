@@ -1,6 +1,5 @@
 package dev.johnoreilly.common.db
 
-import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.kqlite.database.KQLiteDatabase
 import com.kqlite.database.KQLiteDriver
 import com.kqlite.migration.KQLiteMigration
@@ -8,7 +7,7 @@ import com.kqlite.table.KQLiteTable
 
 class PeopleInSpaceDatabase(
     file: String,
-    private val kqliteDriver: KQLiteDriver = PeopleInSpaceDbDriver(BundledSQLiteDriver())
+    private val kqliteDriver: KQLiteDriver
 ) : KQLiteDatabase(file, VERSION) {
 
     companion object {

@@ -46,7 +46,7 @@ kotlin {
 
             implementation(libs.kqlite)
             implementation(libs.androidx.sqlite)
-            implementation(libs.androidx.sqlite.bundled)
+//            implementation(libs.androidx.sqlite.bundled)
 
             api(libs.koin.core)
             implementation(libs.koin.compose.multiplatform)

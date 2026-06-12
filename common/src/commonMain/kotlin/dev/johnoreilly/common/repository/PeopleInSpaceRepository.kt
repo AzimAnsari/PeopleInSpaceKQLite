@@ -83,8 +83,8 @@ class PeopleInSpaceRepository(
                     }.execute()
                 }
                 prepared.close()
-                refreshPeople()
             }
+            refreshPeople()
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

@@ -151,7 +151,7 @@ slf4j = { group = "org.slf4j", name = "slf4j-simple", version.ref = "slf4j" }
 
 kqlite = { module = "com.kqlite:kqlite", version.ref = "kqlite" }
 androidx-sqlite = { module = "androidx.sqlite:sqlite", version.ref = "sqlite" }
-androidx-sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
+#androidx-sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
 
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 

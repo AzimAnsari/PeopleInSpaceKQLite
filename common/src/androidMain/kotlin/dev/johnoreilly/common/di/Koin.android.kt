@@ -1,9 +1,10 @@
 package dev.johnoreilly.common.di
 
 import android.content.Context
+import dev.johnoreilly.common.db.DbDriver
+import dev.johnoreilly.common.db.PeopleInSpaceDatabase
 import dev.johnoreilly.common.viewmodel.ISSPositionViewModel
 import dev.johnoreilly.common.viewmodel.PersonListViewModel
-import dev.johnoreilly.common.db.PeopleInSpaceDatabase
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.android.Android
 import org.koin.android.annotation.KoinViewModel
@@ -36,7 +37,7 @@ actual class NativeModule {
     @Single
     actual fun getPeopleInSpaceDatabaseWrapper(ctx : ContextWrapper): PeopleInSpaceDatabaseWrapper {
         val file = ctx.context.getDatabasePath(PeopleInSpaceDatabase.NAME).absolutePath
-        return PeopleInSpaceDatabaseWrapper(PeopleInSpaceDatabase(file))
+        return PeopleInSpaceDatabaseWrapper(PeopleInSpaceDatabase(file, DbDriver(file)))
     }
 
 }
