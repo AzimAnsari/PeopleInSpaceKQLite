@@ -3,17 +3,19 @@ package dev.johnoreilly.common.db
 import com.kqlite.column.Bind
 import com.kqlite.column.notNull
 import com.kqlite.cursor.KQLiteCursor
+import com.kqlite.table.KQLiteAdapter
 import com.kqlite.table.KQLiteTable
 import dev.johnoreilly.common.remote.Assignment
 
-object TblPeople : KQLiteTable("People") {
+object TblPeople : KQLiteTable("People"), KQLiteAdapter<Assignment> {
     val name = textColumn("name").notNull().primaryKey()
     val craft = textColumn("craft").notNull()
     val personImageUrl = textColumn("personImageUrl")
     val personBio = textColumn("personBio")
     val nationality = textColumn("nationality").notNull().default("")
 
-    fun mapToAssignment(cursor: KQLiteCursor): Assignment {
+
+    override fun mapper(cursor: KQLiteCursor): Assignment {
         return Assignment(
             name = cursor[name],
             craft = cursor[craft],
@@ -23,13 +25,16 @@ object TblPeople : KQLiteTable("People") {
         )
     }
 
-    fun bindAssignment(bind: Bind, assignment: Assignment) {
+    override fun binder(
+        bind: Bind,
+        item: Assignment
+    ) {
         with(bind) {
-            name.bind(assignment.name)
-            craft.bind(assignment.craft)
-            personImageUrl.bind(assignment.personImageUrl)
-            personBio.bind(assignment.personBio)
-            nationality.bind(assignment.nationality)
+            name.bind(item.name)
+            craft.bind(item.craft)
+            personImageUrl.bind(item.personImageUrl)
+            personBio.bind(item.personBio)
+            nationality.bind(item.nationality)
         }
     }
 }

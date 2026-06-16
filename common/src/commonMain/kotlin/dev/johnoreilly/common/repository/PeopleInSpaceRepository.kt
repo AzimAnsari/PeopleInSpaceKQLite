@@ -1,7 +1,8 @@
 package dev.johnoreilly.common.repository
 
-import androidx.sqlite.SQLiteConnection
 import co.touchlab.kermit.Logger
+import com.kqlite.cursor.mapToList
+import com.kqlite.flow.asCallbackFlow
 import com.kqlite.statement.insert
 import com.kqlite.statement.quickDelete
 import com.kqlite.statement.quickSelect
@@ -13,8 +14,17 @@ import dev.johnoreilly.common.remote.AstroviewerApi
 import dev.johnoreilly.common.remote.IssPosition
 import dev.johnoreilly.common.remote.OrbitPoint
 import dev.johnoreilly.common.remote.PeopleInSpaceApi
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import org.koin.core.annotation.Single
 
 
@@ -33,8 +43,7 @@ class PeopleInSpaceRepository(
 ) : PeopleInSpaceRepositoryInterface {
 
     val coroutineScope: CoroutineScope = MainScope()
-    private var connection: SQLiteConnection? = null
-    private val peopleFlow = MutableStateFlow<List<Assignment>>(emptyList())
+    private val connection = peopleInSpaceDatabase.instance.open()
     val logger = Logger.withTag("PeopleInSpaceRepository")
 
     init {
@@ -43,47 +52,31 @@ class PeopleInSpaceRepository(
         }
     }
 
-    override fun fetchPeopleAsFlow(): Flow<List<Assignment>> = peopleFlow.asStateFlow()
-
-    private fun loadPeople(): List<Assignment> {
-        connection = connection ?: peopleInSpaceDatabase.instance.open()
-
-        return TblPeople.quickSelect().use { cursor ->
-            cursor
-                .asSequence()
-                .map(TblPeople::mapToAssignment)
-                .toList()
+    override fun fetchPeopleAsFlow(): Flow<List<Assignment>> = TblPeople
+        .quickSelect()
+        .asCallbackFlow()
+        .mapToList(Dispatchers.IO) {
+            TblPeople.mapper(it)
         }
-    }
-
-    fun refreshPeople() {
-        val people = loadPeople()
-        logger.d { "Found ${people.size} people." }
-        peopleFlow.value = people
-    }
 
     override suspend fun fetchAndStorePeople() {
         logger.d { "fetchAndStorePeople" }
         try {
             val result = peopleInSpaceApi.fetchPeople()
 
-            connection = connection ?: peopleInSpaceDatabase.instance.open()
             // this is very basic implementation for now that removes all existing rows
             // in db and then inserts results from api request
             peopleInSpaceDatabase.instance.withTransaction {
-
                 // DELETE FROM People;
                 TblPeople.quickDelete(where = null)
-
                 // INSERT OR REPLACE INTO People VALUES(?,?,?,?,?);
-                val prepared = TblPeople.insert(onConflict = Action.REPLACE)
-                result.people.forEach { assignment ->
-                    prepared.bind {
-                        TblPeople.bindAssignment(bind = this, assignment = assignment)
+                val preparedStmt = TblPeople.insert(onConflict = Action.REPLACE)
+                result.people.forEach { item ->
+                    preparedStmt.bind {
+                        TblPeople.binder(bind = this, item = item)
                     }.execute()
                 }
-                prepared.close()
-                refreshPeople()
+                preparedStmt.close()
             }
         } catch (e: CancellationException) {
             throw e
