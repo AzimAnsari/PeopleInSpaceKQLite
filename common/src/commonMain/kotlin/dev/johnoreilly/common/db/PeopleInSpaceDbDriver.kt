@@ -6,7 +6,7 @@ import com.kqlite.database.KQLiteDriver
 
 
 class PeopleInSpaceDbDriver(private val sqliteDriver: SQLiteDriver) : KQLiteDriver {
-    override fun open(path: String, flags: Int?): SQLiteConnection {
-        return sqliteDriver.open(path)
+    override fun open(file: String, flags: Int?): SQLiteConnection {
+        return sqliteDriver.open(file)
     }
 }

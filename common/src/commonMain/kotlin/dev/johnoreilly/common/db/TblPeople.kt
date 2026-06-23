@@ -29,7 +29,7 @@ object TblPeople : KQLiteTable("People"), KQLiteAdapter<Assignment> {
         bind: Bind,
         item: Assignment
     ) {
-        with(bind) {
+        bind.apply {
             name.bind(item.name)
             craft.bind(item.craft)
             personImageUrl.bind(item.personImageUrl)

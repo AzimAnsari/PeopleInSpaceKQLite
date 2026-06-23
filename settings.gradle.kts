@@ -7,9 +7,10 @@ pluginManagement {
             maven {
                 url = uri("https://androidx.dev/snapshots/builds/14637376/artifacts/repository")
             }
-            maven {
-                url = uri("https://central.sonatype.com/repository/maven-snapshots/")
-            }
+//            maven {
+//                url = uri("https://central.sonatype.com/repository/maven-snapshots/")
+//            }
+            mavenLocal()
         }
     }
 
