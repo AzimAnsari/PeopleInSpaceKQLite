@@ -1,8 +1,8 @@
 package dev.johnoreilly.common.repository
 
 import co.touchlab.kermit.Logger
+import com.kqlite.cursor.asCallbackFlow
 import com.kqlite.cursor.mapToList
-import com.kqlite.flow.asCallbackFlow
 import com.kqlite.statement.insert
 import com.kqlite.statement.quickDelete
 import com.kqlite.statement.quickSelect
@@ -16,8 +16,6 @@ import dev.johnoreilly.common.remote.OrbitPoint
 import dev.johnoreilly.common.remote.PeopleInSpaceApi
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
@@ -55,9 +53,7 @@ class PeopleInSpaceRepository(
     override fun fetchPeopleAsFlow(): Flow<List<Assignment>> = TblPeople
         .quickSelect()
         .asCallbackFlow()
-        .mapToList(Dispatchers.IO) {
-            TblPeople.mapper(it)
-        }
+        .mapToList(mapper = TblPeople::mapper)
 
     override suspend fun fetchAndStorePeople() {
         logger.d { "fetchAndStorePeople" }
